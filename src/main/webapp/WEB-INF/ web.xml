@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+         https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+         version="5.0">
+
+    <display-name>JEEGestionRH</display-name>
+
+    <!-- Déclaration du Servlet Login -->
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>controllers.LoginServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+
+    <!-- Déclaration du Servlet Admin (Gestion des employés et départements) -->
+    <servlet>
+        <servlet-name>AdminServlet</servlet-name>
+        <servlet-class>controllers.AdminServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminServlet</servlet-name>
+        <url-pattern>/admin</url-pattern>
+    </servlet-mapping>
+
+    <!-- Déclaration du Servlet Responsable (Évaluation des employés) -->
+    <servlet>
+        <servlet-name>ResponsableServlet</servlet-name>
+        <servlet-class>controllers.ResponsableServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResponsableServlet</servlet-name>
+        <url-pattern>/responsable</url-pattern>
+    </servlet-mapping>
+
+    <!-- Déclaration du Servlet Employé (Consultation et mise à jour des infos) -->
+    <servlet>
+        <servlet-name>EmployeServlet</servlet-name>
+        <servlet-class>controllers.EmployeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EmployeServlet</servlet-name>
+        <url-pattern>/employe</url-pattern>
+    </servlet-mapping>
+
+    <!-- Déclaration du Filtre d'Authentification -->
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>filters.AuthFilter</filter-class>
+    </filter>
+
+    <!-- Mapping du Filtre sur les pages protégées -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/admin</url-pattern>
+        <url-pattern>/responsable</url-pattern>
+        <url-pattern>/employe</url-pattern>
+    </filter-mapping>
+
+    <!-- Configuration de la page d'erreur en cas d'accès interdit -->
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+
+</web-app>
