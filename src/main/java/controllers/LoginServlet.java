@@ -25,36 +25,55 @@ public class LoginServlet extends HttpServlet {
         utilisateurs.put("employe@company.com", new Utilisateur(3, "Employé", "User", "employe@company.com", "emp123", "Employé"));
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 🔹 Récupérer les paramètres de la requête (valide pour toutes les méthodes)
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
         Utilisateur user = utilisateurs.get(email);
 
+        // 🔹 Vérifier si la requête vient d'une API (Postman)
+        boolean isApiRequest = "application/json".equals(request.getHeader("Accept"));
+
         if (user != null && user.getPassword().equals(password)) {
             HttpSession session = request.getSession();
             session.setAttribute("utilisateur", user);
 
-            // Redirection automatique selon le rôle
-            switch (user.getRole()) {
-                case "Admin":
-                    response.sendRedirect("admin.jsp");
-                    break;
-                case "Responsable":
-                    response.sendRedirect("responsable.jsp");
-                    break;
-                case "Employé":
-                    response.sendRedirect("employe.jsp");
-                    break;
-                default:
-                    response.sendRedirect("error.jsp");
-                    break;
+            if (isApiRequest) {
+                // ✅ Réponse JSON pour Postman
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"message\":\"Connexion réussie\", \"role\":\"" + user.getRole() + "\"}");
+            } else {
+                // ✅ Redirection selon le rôle pour l'interface graphique
+                switch (user.getRole()) {
+                    case "Admin":
+                        response.sendRedirect("admin.jsp");
+                        break;
+                    case "Responsable":
+                        response.sendRedirect("responsable.jsp");
+                        break;
+                    case "Employé":
+                        response.sendRedirect("employe.jsp");
+                        break;
+                    default:
+                        response.sendRedirect("error.jsp");
+                        break;
+                }
             }
         } else {
-            // Stocker le message d'erreur dans la session pour qu'il soit visible après la redirection
-            HttpSession session = request.getSession();
-            session.setAttribute("errorMessage", "⚠️ Email ou mot de passe incorrect !");
-            response.sendRedirect("index.jsp");
+            if (isApiRequest) {
+                // ❌ Réponse JSON si échec de connexion via API
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"error\":\"Email ou mot de passe incorrect\"}");
+            } else {
+                // ❌ Message d'erreur pour l'interface web
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "⚠️ Email ou mot de passe incorrect !");
+                response.sendRedirect("index.jsp");
+            }
         }
     }
 }
