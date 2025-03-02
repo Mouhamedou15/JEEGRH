@@ -31,8 +31,7 @@ public class AdminServlet extends HttpServlet {
 
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // ✅ Détecter si la requête attend du JSON ou HTML
-        String acceptHeader = request.getHeader("Accept");
-        boolean isJsonRequest = acceptHeader != null && acceptHeader.contains("application/json");
+        boolean isJsonRequest = "application/json".equals(request.getContentType());
 
         // ✅ Vérifier la méthode de requête
         String method = request.getMethod();
@@ -47,13 +46,31 @@ public class AdminServlet extends HttpServlet {
     }
 
     private void ajouterUtilisateur(HttpServletRequest request, HttpServletResponse response, boolean isJsonRequest) throws IOException, ServletException {
-        // ✅ Lire les paramètres du formulaire (HTML) ou de Postman (JSON)
-        String email = request.getParameter("email");
-        String nom = request.getParameter("nom");
-        String prenom = request.getParameter("prenom");
-        String motDePasse = request.getParameter("password");
-        String role = request.getParameter("role");
-        String departementIdStr = request.getParameter("departement");
+        String email = null, nom = null, prenom = null, motDePasse = null, role = null, departement = null;
+
+        if (isJsonRequest) {
+            // ✅ Lecture des données JSON envoyées dans le body (Postman)
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> jsonMap = objectMapper.readValue(request.getReader(), Map.class);
+            email = jsonMap.get("email");
+            nom = jsonMap.get("nom");
+            prenom = jsonMap.get("prenom");
+            motDePasse = jsonMap.get("password");
+            role = jsonMap.get("role");
+            String departementIdStr = jsonMap.get("departement");
+            
+            departement = validerDepartement(role, departementIdStr);
+        } else {
+            // ✅ Lecture des données envoyées en x-www-form-urlencoded (Formulaire HTML)
+            email = request.getParameter("email");
+            nom = request.getParameter("nom");
+            prenom = request.getParameter("prenom");
+            motDePasse = request.getParameter("password");
+            role = request.getParameter("role");
+            String departementIdStr = request.getParameter("departement");
+
+            departement = validerDepartement(role, departementIdStr);
+        }
 
         Map<String, Object> jsonResponse = new HashMap<>();
 
@@ -63,26 +80,6 @@ public class AdminServlet extends HttpServlet {
             jsonResponse.put("message", "Tous les champs sont obligatoires.");
             sendJsonResponse(response, jsonResponse);
             return;
-        }
-
-        // Vérifier si le département existe (sauf pour l'Admin qui n'a pas de département obligatoire)
-        String departement = null;
-        if (!role.equals("Admin") && departementIdStr != null) {
-            try {
-                int departementId = Integer.parseInt(departementIdStr);
-                if (!departements.containsKey(departementId)) {
-                    jsonResponse.put("status", "error");
-                    jsonResponse.put("message", "Le département sélectionné n'existe pas.");
-                    sendJsonResponse(response, jsonResponse);
-                    return;
-                }
-                departement = departements.get(departementId);
-            } catch (NumberFormatException e) {
-                jsonResponse.put("status", "error");
-                jsonResponse.put("message", "ID de département invalide.");
-                sendJsonResponse(response, jsonResponse);
-                return;
-            }
         }
 
         // ❌ Vérifier si l'email est déjà utilisé
@@ -108,6 +105,23 @@ public class AdminServlet extends HttpServlet {
             request.setAttribute("message", "✅ Utilisateur ajouté avec succès !");
             request.getRequestDispatcher("admin.jsp").forward(request, response);
         }
+    }
+
+    // ✅ Validation du département
+    private String validerDepartement(String role, String departementIdStr) {
+        if (role.equals("Admin")) {
+            return ""; // ✅ L'Admin n'a pas de département
+        }
+
+        if (departementIdStr != null) {
+            try {
+                int departementId = Integer.parseInt(departementIdStr);
+                if (departements.containsKey(departementId)) {
+                    return departements.get(departementId);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+        return null; // 🚨 Si invalide, retournera une erreur
     }
 
     // ✅ Méthode pour envoyer une réponse JSON propre

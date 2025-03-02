@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import models.Utilisateur;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,17 +29,25 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // 🔹 Détecter si la requête attend JSON (Postman)
-        String acceptHeader = request.getHeader("Accept");
-        boolean isJsonRequest = acceptHeader != null && acceptHeader.contains("application/json");
+        // 🔹 Détecter si la requête est en JSON ou x-www-form-urlencoded
+        boolean isJsonRequest = "application/json".equals(request.getContentType());
 
         // 🔹 Récupérer les paramètres de connexion
-        String email = request.getParameter("email");
-        String password = request.getParameter("password");
+        String email = null, password = null;
+
+        if (isJsonRequest) {
+            // ✅ Lire les données JSON depuis le corps de la requête
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> jsonMap = objectMapper.readValue(request.getReader(), Map.class);
+            email = jsonMap.get("email");
+            password = jsonMap.get("password");
+        } else {
+            // ✅ Lire les données depuis les paramètres du formulaire HTML (x-www-form-urlencoded)
+            email = request.getParameter("email");
+            password = request.getParameter("password");
+        }
 
         Utilisateur user = utilisateurs.get(email);
-
-        // 🔹 Préparer l'objet JSON de réponse
         Map<String, Object> jsonResponse = new HashMap<>();
 
         if (user != null && user.getPassword().equals(password)) {
@@ -53,7 +62,7 @@ public class LoginServlet extends HttpServlet {
                 Map<String, String> userData = new HashMap<>();
                 userData.put("email", user.getEmail());
                 userData.put("role", user.getRole());
-                userData.put("departement", user.getDepartement().isEmpty() ? "Aucun" : user.getDepartement()); // ✅ Si vide, afficher "Aucun"
+                userData.put("departement", user.getDepartement().isEmpty() ? "Aucun" : user.getDepartement());
 
                 jsonResponse.put("data", userData);
                 sendJsonResponse(response, jsonResponse);
@@ -89,7 +98,7 @@ public class LoginServlet extends HttpServlet {
         }
     }
 
-    // 🔹 Méthode utilitaire pour envoyer une réponse JSON propre
+    // 🔹 Méthode pour envoyer une réponse JSON propre
     private void sendJsonResponse(HttpServletResponse response, Map<String, Object> jsonResponse) throws IOException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
