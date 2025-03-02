@@ -1,5 +1,6 @@
 package controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -27,26 +28,34 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // 🔹 Récupérer les paramètres de la requête (valide pour toutes les méthodes)
+        // 🔹 Détecter si la requête attend JSON (Postman)
+        String acceptHeader = request.getHeader("Accept");
+        boolean isJsonRequest = acceptHeader != null && acceptHeader.contains("application/json");
+
+        // 🔹 Récupérer les paramètres de connexion
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
         Utilisateur user = utilisateurs.get(email);
 
-        // 🔹 Vérifier si la requête vient d'une API (Postman)
-        boolean isApiRequest = "application/json".equals(request.getHeader("Accept"));
+        // 🔹 Préparer l'objet JSON de réponse
+        Map<String, Object> jsonResponse = new HashMap<>();
 
         if (user != null && user.getPassword().equals(password)) {
             HttpSession session = request.getSession();
             session.setAttribute("utilisateur", user);
 
-            if (isApiRequest) {
+            if (isJsonRequest) {
                 // ✅ Réponse JSON pour Postman
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                response.getWriter().write("{\"message\":\"Connexion réussie\", \"role\":\"" + user.getRole() + "\"}");
+                jsonResponse.put("status", "success");
+                jsonResponse.put("message", "Authentification réussie");
+                Map<String, String> userData = new HashMap<>();
+                userData.put("email", user.getEmail());
+                userData.put("role", user.getRole());
+                jsonResponse.put("data", userData);
+                sendJsonResponse(response, jsonResponse);
             } else {
-                // ✅ Redirection selon le rôle pour l'interface graphique
+                // ✅ Redirection pour l’interface graphique (Navigateur)
                 switch (user.getRole()) {
                     case "Admin":
                         response.sendRedirect("admin.jsp");
@@ -63,17 +72,25 @@ public class LoginServlet extends HttpServlet {
                 }
             }
         } else {
-            if (isApiRequest) {
-                // ❌ Réponse JSON si échec de connexion via API
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                response.getWriter().write("{\"error\":\"Email ou mot de passe incorrect\"}");
+            if (isJsonRequest) {
+                // ❌ Réponse JSON si erreur de connexion via Postman
+                jsonResponse.put("status", "error");
+                jsonResponse.put("message", "Email ou mot de passe incorrect");
+                sendJsonResponse(response, jsonResponse);
             } else {
-                // ❌ Message d'erreur pour l'interface web
+                // ❌ Message d’erreur pour l’interface graphique
                 HttpSession session = request.getSession();
                 session.setAttribute("errorMessage", "⚠️ Email ou mot de passe incorrect !");
                 response.sendRedirect("index.jsp");
             }
         }
+    }
+
+    // 🔹 Méthode utilitaire pour envoyer une réponse JSON propre
+    private void sendJsonResponse(HttpServletResponse response, Map<String, Object> jsonResponse) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        ObjectMapper objectMapper = new ObjectMapper();
+        response.getWriter().write(objectMapper.writeValueAsString(jsonResponse));
     }
 }
