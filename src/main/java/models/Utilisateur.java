@@ -7,18 +7,29 @@ public class Utilisateur {
     private String email;
     private String password;
     private String role;
+    private String departement; // ✅ Ajout de l'attribut département
 
-    // Constructeur
-    public Utilisateur(int id, String nom, String prenom, String email, String password, String role) {
+    // 🔹 Constructeur
+    public Utilisateur(int id, String nom, String prenom, String email, String password, String role, String departement) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.password = password;
         this.role = role;
+        this.departement = departement;
     }
 
-    // Getters et Setters
+    // ✅ Getter et Setter pour le département
+    public String getDepartement() {
+        return departement;
+    }
+
+    public void setDepartement(String departement) {
+        this.departement = departement;
+    }
+
+    // ✅ Getters et Setters existants
     public int getId() {
         return id;
     }
@@ -67,7 +78,7 @@ public class Utilisateur {
         this.role = role;
     }
 
-    // Méthode pour afficher l'utilisateur
+    // ✅ Mise à jour de la méthode toString pour inclure le département
     @Override
     public String toString() {
         return "Utilisateur{" +
@@ -76,6 +87,7 @@ public class Utilisateur {
                 ", prenom='" + prenom + '\'' +
                 ", email='" + email + '\'' +
                 ", role='" + role + '\'' +
+                ", departement='" + departement + '\'' +
                 '}';
     }
 }

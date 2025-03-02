@@ -21,9 +21,9 @@ public class LoginServlet extends HttpServlet {
     private static final Map<String, Utilisateur> utilisateurs = new HashMap<>();
 
     static {
-        utilisateurs.put("admin@company.com", new Utilisateur(1, "Admin", "User", "admin@company.com", "admin", "Admin"));
-        utilisateurs.put("responsable@company.com", new Utilisateur(2, "Responsable", "User", "responsable@company.com", "resp123", "Responsable"));
-        utilisateurs.put("employe@company.com", new Utilisateur(3, "Employé", "User", "employe@company.com", "emp123", "Employé"));
+        utilisateurs.put("admin@company.com", new Utilisateur(1, "Admin", "User", "admin@company.com", "admin", "Admin", "")); // ✅ Admin n'a pas de département
+        utilisateurs.put("responsable@company.com", new Utilisateur(2, "Responsable", "User", "responsable@company.com", "resp123", "Responsable", "Ressources Humaines"));
+        utilisateurs.put("employe@company.com", new Utilisateur(3, "Employé", "User", "employe@company.com", "emp123", "Employé", "Informatique"));
     }
 
     @Override
@@ -49,9 +49,12 @@ public class LoginServlet extends HttpServlet {
                 // ✅ Réponse JSON pour Postman
                 jsonResponse.put("status", "success");
                 jsonResponse.put("message", "Authentification réussie");
+
                 Map<String, String> userData = new HashMap<>();
                 userData.put("email", user.getEmail());
                 userData.put("role", user.getRole());
+                userData.put("departement", user.getDepartement().isEmpty() ? "Aucun" : user.getDepartement()); // ✅ Si vide, afficher "Aucun"
+
                 jsonResponse.put("data", userData);
                 sendJsonResponse(response, jsonResponse);
             } else {

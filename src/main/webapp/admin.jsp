@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.util.Map" %> <%-- ✅ Import de Map pour éviter l'erreur --%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -68,24 +69,6 @@
             font-weight: bold;
             margin-top: 10px;
         }
-
-        /* ✅ Style du lien de déconnexion */
-        .logout {
-            display: block;
-            margin-top: 20px;
-            text-decoration: none;
-            color: white;
-            background-color: #dc3545;
-            padding: 10px;
-            border-radius: 5px;
-            width: 200px;
-            margin: auto;
-        }
-
-        .logout:hover {
-            background-color: #c82333;
-        }
-
     </style>
 </head>
 <body>
@@ -111,6 +94,13 @@
             <option value="Employé">Employé</option>
         </select>
 
+        <label>Département :</label>
+        <select name="departement">
+            <option value="1">Informatique</option>
+            <option value="2">Comptabilité</option>
+            <option value="3">Gestion</option>
+        </select>
+
         <button type="submit">➕ Ajouter Utilisateur</button>
     </form>
 
@@ -119,7 +109,5 @@
     <% if (message != null) { %>
         <p class="<%= message.contains("succès") ? "success" : "error" %>"><%= message %></p>
     <% } %>
-
-    
 </body>
 </html>

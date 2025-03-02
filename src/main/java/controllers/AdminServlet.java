@@ -16,8 +16,18 @@ import java.util.Map;
 public class AdminServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Stockage temporaire des utilisateurs en mémoire (sera remplacé par une base de données)
+    // Stockage temporaire des utilisateurs en mémoire
     private static final Map<String, Utilisateur> utilisateurs = new HashMap<>();
+
+    // Stockage temporaire des départements
+    private static final Map<Integer, String> departements = new HashMap<>();
+
+    static {
+        // Ajout de quelques départements par défaut
+        departements.put(1, "Informatique");
+        departements.put(2, "Comptabilité");
+        departements.put(3, "Gestion");
+    }
 
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // ✅ Détecter si la requête attend du JSON ou HTML
@@ -30,7 +40,8 @@ public class AdminServlet extends HttpServlet {
         if ("POST".equalsIgnoreCase(method)) {
             ajouterUtilisateur(request, response, isJsonRequest);
         } else {
-            // ✅ Si GET, afficher la page admin
+            // ✅ Si GET, afficher la page admin avec la liste des départements
+            request.setAttribute("departements", departements);
             request.getRequestDispatcher("admin.jsp").forward(request, response);
         }
     }
@@ -40,8 +51,9 @@ public class AdminServlet extends HttpServlet {
         String email = request.getParameter("email");
         String nom = request.getParameter("nom");
         String prenom = request.getParameter("prenom");
-        String motDePasse = request.getParameter("password"); // Correction du paramètre
+        String motDePasse = request.getParameter("password");
         String role = request.getParameter("role");
+        String departementIdStr = request.getParameter("departement");
 
         Map<String, Object> jsonResponse = new HashMap<>();
 
@@ -53,6 +65,26 @@ public class AdminServlet extends HttpServlet {
             return;
         }
 
+        // Vérifier si le département existe (sauf pour l'Admin qui n'a pas de département obligatoire)
+        String departement = null;
+        if (!role.equals("Admin") && departementIdStr != null) {
+            try {
+                int departementId = Integer.parseInt(departementIdStr);
+                if (!departements.containsKey(departementId)) {
+                    jsonResponse.put("status", "error");
+                    jsonResponse.put("message", "Le département sélectionné n'existe pas.");
+                    sendJsonResponse(response, jsonResponse);
+                    return;
+                }
+                departement = departements.get(departementId);
+            } catch (NumberFormatException e) {
+                jsonResponse.put("status", "error");
+                jsonResponse.put("message", "ID de département invalide.");
+                sendJsonResponse(response, jsonResponse);
+                return;
+            }
+        }
+
         // ❌ Vérifier si l'email est déjà utilisé
         if (utilisateurs.containsKey(email)) {
             jsonResponse.put("status", "error");
@@ -62,7 +94,7 @@ public class AdminServlet extends HttpServlet {
         }
 
         // ✅ Création et ajout de l'utilisateur
-        Utilisateur newUser = new Utilisateur(utilisateurs.size() + 1, nom, prenom, email, motDePasse, role);
+        Utilisateur newUser = new Utilisateur(utilisateurs.size() + 1, nom, prenom, email, motDePasse, role, departement);
         utilisateurs.put(email, newUser);
 
         if (isJsonRequest) {
